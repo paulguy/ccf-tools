@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 		return(EXIT_FAILURE);
 	}
 
-	unsigned int magic, rootoffset, filecount, i;
+	unsigned int magic, chunksize, filecount, i;
 	ccffile **fileentries;
 	char temp[21] = "                    ";
 	fread(&magic, 4, 1, infile);
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "File %s isn't a valid CCF archive. %X\n", argv[1], magic);
 		return(EXIT_FAILURE);
 	}
-	fseek(infile, 16, SEEK_SET); fread(&rootoffset, 4, 1, infile);
+	fseek(infile, 16, SEEK_SET); fread(&chunksize, 4, 1, infile);
 	fseek(infile, 20, SEEK_SET); fread(&filecount, 4, 1, infile);
 	if(filecount == 0) {
 		fprintf(stderr, "File %s contains no files.\n", argv[1]);
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Couldn't allocate memory for file list.\n");
 		return(EXIT_FAILURE);
 	}
-	fseek(infile, rootoffset, SEEK_SET);
+	fseek(infile, 0x20, SEEK_SET);
 	for(i = 0; i < filecount; i++) {
 		fileentries[i] = (ccffile *)malloc(sizeof(ccffile) * filecount);
 		if(fileentries[i] == NULL) {
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Couldn't open %s for writing.\n", temp);
 			return(EXIT_FAILURE);
 		}
-		fseek(infile, fileentries[i]->offset * 32, SEEK_SET);
+		fseek(infile, fileentries[i]->offset * chunksize, SEEK_SET);
 		databuffer = (char *)malloc(sizeof(char) * fileentries[i]->datasize);
 		fread(databuffer, 1, fileentries[i]->datasize, infile);
 		if(fileentries[i]->filesize == fileentries[i]->datasize) {
